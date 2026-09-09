@@ -15,9 +15,9 @@ playwright install chromium   # or msedge / chrome, see --channel below
 
 ## Filenames
 
-Each file starts with its article id and the saved date:
+Each file starts with its article ID and the saved date:
 
-```sh
+```text
 KB88569_2025.08.07_exclusion-defaults.pdf        legacy KB number
 A000013146_2026.04.16_supported-rhel-kernel.pdf  Salesforce article number
 ```
@@ -47,7 +47,7 @@ python update.py <directory> --debug                   # verbose diagnostics on 
 
 `--debug` can be added to any invocation; it prints the HTTP requests, page resolution, and browser setup to stderr without changing normal output.
 
-## How the check works
+### How the check works
 
 Trellix has no public KB API, but every article has a plain-HTML printable page:
 
@@ -57,15 +57,7 @@ https://support.trellix.com/articles/en_US/<Type>/<UrlName>/p
 
 `<UrlName>` is the `KB` number for legacy articles or the numeric article number for newer ones (`000013146`, saved locally as `A000013146`). That page carries the "Last Modified Date", so the report needs no browser: it checks both KB- and A-numbered articles over plain HTTP. Login-gated articles return empty until you sign in with `--login`; while unauthenticated they are listed under "LOGIN REQUIRED", and once signed in they resolve like any other article.
 
-## The report
-
-```sh
-  OUT OF DATE       article is older than the portal — shown with its URL
-  UP TO DATE        matches the portal
-  LOGIN REQUIRED    can't be read without signing in (run --login)
-```
-
-## `--download` (PDF)
+### `--download` (PDF)
 
 `--download` uses Playwright to open each out-of-date article and save it as a PDF, then moves the superseded file into `OLD/` (nothing is deleted). Install once:
 
@@ -74,7 +66,7 @@ pip install playwright
 playwright install chromium          # or use --channel msedge / chrome
 ```
 
-## PDF output settings
+#### PDF output settings
 
 The PDF is produced by the browser's print-to-PDF, configurable in the `PDF_OPTIONS` block near the top of `update.py`:
 
@@ -97,7 +89,7 @@ python update.py <dir> --download --margin 0.5in --format Letter --landscape --s
 
 Anything Playwright's `page.pdf()` accepts can be added to `PDF_OPTIONS`. If a value is rejected, the script falls back to a plain print so a run never fails.
 
-## Add an article (`--add`)
+### Add an article (`--add`)
 
 Download one or more articles straight into the folder by id, without needing an existing file:
 
@@ -111,12 +103,8 @@ Each id fetches the article's last-modified date and title and saves `KB88569_20
 
 If a file for that article is already in the folder, `--add` says so and reports whether it is up to date. When it is out of date it asks `Update it?` and, on yes, downloads the new version (old file moves to `OLD/`, original naming preserved).
 
-## Login (`--login`)
+### Login (`--login`)
 
 For login-only articles, run `python update.py --login`. A real browser window opens on the Trellix sign-in page; you sign in (the script never sees your password), and the resulting session cookie is saved to `.trellix_session.json`. Both the report and `--download` reuse it automatically until it expires. Running `--login` again when a valid session exists asks whether to sign in again (and shows when it was saved); if the session has expired it re-signs in directly.
 
 There's no username/password prompt because Trellix uses Okta SSO/MFA, which a scripted login can't handle. Signing in through a real browser window sidesteps that and avoids storing raw credentials.
-
-## Safety
-
-Network, file, and browser operations are guarded individually: a single unreachable article, parse failure, or PDF error is reported and skipped instead of aborting the run. Superseded files are moved, never deleted.
